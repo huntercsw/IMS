@@ -44,14 +44,14 @@ var (
 	ServiceMap                     map[string]SubService // {"groupName": SubService}
 	LbCliV3                        *clientv3.Client
 	LoadBalanceSchedulingAlgorithm = map[string]RoundRobinLoadBalance{
-		"BaseRoundRobin": new(BaseRoundRobin),
+		"BaseRoundRobin":                 new(BaseRoundRobin),
 		"RoundRobinWithThresholdLimited": new(RoundRobinWithThresholdLimited),
 	}
 )
 
 type SubService map[string]map[string]*imsPb.GetServiceResponse // {"serviceName": {"host:port": *imsPb.GetServiceResponse}}
 
-type loadBalance struct{
+type loadBalance struct {
 	schedulingAlgorithm RoundRobinLoadBalance
 }
 
@@ -59,10 +59,27 @@ func (lb *loadBalance) GetServiceWithRR(ctx context.Context, req *imsPb.GetServi
 	var (
 		serviceHost string
 	)
-	if serviceHost, err = lb.schedulingAlgorithm.RoundRobinNext(&ServiceWithThreshold{GroupName:req.ServiceGroup, ServiceName:req.ServiceName}); err != nil {
+	if serviceHost, err = lb.schedulingAlgorithm.RoundRobinNext(&ServiceWithThreshold{GroupName: req.ServiceGroup, ServiceName: req.ServiceName}); err != nil {
 		return
 	}
 	return ServiceMap[req.ServiceGroup][req.ServiceName][serviceHost], nil
+}
+
+func (lb *loadBalance) SetServiceTrafficLimit(ctx context.Context, req *imsPb.ServiceTrafficLimitRequest) (rsp *imsPb.ServiceTrafficLimitResponse, err error) {
+	rsp = new(imsPb.ServiceTrafficLimitResponse)
+	if err = lb.schedulingAlgorithm.SetServiceThresholdValue(ServiceWithThresholdList{
+		&ServiceWithThreshold{
+			GroupName:   req.ServiceGroup,
+			ServiceName: req.ServiceName,
+			ServiceHost: req.ServiceHost,
+			ServicePort: req.ServicePort,
+			Threshold:   uint8(req.TrafficThreshold),
+		}}); err != nil {
+		fmt.Println("set threshold value error:", err)
+		rsp.Message = "set threshold value error:"
+	}
+
+	return
 }
 
 func StartLoadBalanceServer(loadBalanceSchedulingAlgorithm string) {
@@ -81,7 +98,7 @@ func StartLoadBalanceServer(loadBalanceSchedulingAlgorithm string) {
 	}
 
 	var (
-		err error
+		err      error
 		listener net.Listener
 	)
 
@@ -107,15 +124,6 @@ func StartLoadBalanceServer(loadBalanceSchedulingAlgorithm string) {
 
 	go serviceListWatcher(ctx, algo)
 
-	//**********************
-	if err = algo.SetServiceThresholdValue(ServiceWithThresholdList{
-		&ServiceWithThreshold{
-			GroupName:"imsTest", ServiceName:"yinuo", ServiceHost: "192.168.1.151", ServicePort:"65432", Threshold:1,
-		}}); err != nil {
-				fmt.Println("set threshold value error:", err)
-	}
-	//*********************
-
 	// rpc server of lb init
 	listener, err = net.Listen("tcp", "localhost:"+LB_PORT)
 	if err != nil {
@@ -124,7 +132,7 @@ func StartLoadBalanceServer(loadBalanceSchedulingAlgorithm string) {
 	}
 
 	s := grpc.NewServer()
-	imsPb.RegisterImsLoadBalanceServer(s, &loadBalance{schedulingAlgorithm:algo})
+	imsPb.RegisterImsLoadBalanceServer(s, &loadBalance{schedulingAlgorithm: algo})
 	reflection.Register(s)
 
 	err = s.Serve(listener)
