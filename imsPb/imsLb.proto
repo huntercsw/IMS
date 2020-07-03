@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package imsPb;
+
+service ImsLoadBalance {
+    rpc GetServiceWithRR (GetServiceRequest) returns (GetServiceResponse) {}
+}
+
+message GetServiceRequest {
+    string serviceGroup = 1;
+    string serviceName = 2;
+}
+
+message GetServiceResponse {
+    string serviceHost = 1;
+    string servicePort = 2;
+}

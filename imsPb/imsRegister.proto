@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package imsPb;
+
+service ImsRegister {
+    rpc ServiceRegister (ServiceRegisterRequest) returns (ServiceRegisterResponse) {}
+}
+
+message ServiceRegisterRequest {
+    string serviceGroup = 1;
+    string serviceName = 2;
+    string serviceHost = 3;
+    string servicePort = 4;
+}
+
+message ServiceRegisterResponse {
+    string message = 1;
+}
+
