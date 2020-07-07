@@ -10,7 +10,7 @@ IMS是一个简易的rpc框架，基于grpc实现。目前的主要功能包括�
 
 IMS秉承了去中心化的思想，主节点的作用是提供一个管理后台的web服务。主节点挂了也只是不能登录管理后台，不会影响正在运行的服务。
 
-![](D:\go_project\IMS\Doduments\1594088269(1).png)
+![](./1594088269(1).png)
 
 节点启动后，会启动TicketOffice和ServiceCenter两个协程。
 
@@ -22,7 +22,7 @@ ServiceCenter：启动后，首先到注册中心查询所有的服务信息，�
 
 # 三、请求流程
 
-![](D:\go_project\IMS\Doduments\request_flow.png)
+![](./request_flow.png)
 
 1、client请求本机TicketOffice和ServiceCenter，获取Tocken和服务的源数据信息。
 
@@ -44,7 +44,7 @@ ServiceCenter：启动后，首先到注册中心查询所有的服务信息，�
 
 （二）到主机的流量限制：需要配合tocken认证一起使用（基于令牌桶策略实现）。实现流程如下：
 
-![](D:\go_project\IMS\Doduments\host_limit_flow.png)
+![](./host_limit_flow.png)
 
 1、到本地的服务列表中查找可用的服务元数据；
 
