@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package imsPb;
+
+service ImsTicketOffice {
+    rpc GetToken (GetTokenRequest) returns (ImsToken) {}
+}
+
+message GetTokenRequest {
+    string domainName = 1;
+    string serviceName = 2;
+}
+
+message ImsToken {
+    string domainName = 1;
+    string remoteAddr = 2;
+    string TokenId = 3;
+    int64 createTime = 4;
+}
+
+

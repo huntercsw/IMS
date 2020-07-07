@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"imsPb"
+	"middleWare"
 	"net"
 	"strings"
 	"sync"
@@ -56,9 +57,13 @@ type loadBalance struct {
 }
 
 func (lb *loadBalance) GetServiceWithRR(ctx context.Context, req *imsPb.GetServiceRequest) (rsp *imsPb.GetServiceResponse, err error) {
+
 	var (
 		serviceHost string
 	)
+
+	// TODO: create token if no token, if there is token in ctx, check token
+
 	if serviceHost, err = lb.schedulingAlgorithm.RoundRobinNext(&ServiceWithThreshold{GroupName: req.ServiceGroup, ServiceName: req.ServiceName}); err != nil {
 		return
 	}
@@ -131,7 +136,7 @@ func StartLoadBalanceServer(loadBalanceSchedulingAlgorithm string) {
 		panic("lb server start error")
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(grpc.UnaryInterceptor(middleWare.TokenInterceptor))
 	imsPb.RegisterImsLoadBalanceServer(s, &loadBalance{schedulingAlgorithm: algo})
 	reflection.Register(s)
 

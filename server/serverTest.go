@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc"
 	"imsPb"
 	"imsRegister"
+	"middleWare"
 	"os"
 	"os/signal"
 	"time"
@@ -13,14 +14,14 @@ import (
 
 var (
 	group = "imsTest"
-	name = "yinuo"
-	host = "192.168.1.151"
-	port = "65432"
-	res = make([]string, 0)
+	name  = "yinuo"
+	host  = "192.168.1.151"
+	port  = "65432"
+	res   = make([]string, 0)
 )
 
 func main() {
-	fmt.Println("service start")
+	//fmt.Println("service start")
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer func() {
 		cancel()
@@ -28,22 +29,32 @@ func main() {
 	}()
 
 	go imsRegister.RegisterService(ctx, &imsPb.ServiceRegisterRequest{
-		ServiceGroup:group, ServiceName:name, ServiceHost:host, ServicePort:port,
+		ServiceGroup: group, ServiceName: name, ServiceHost: host, ServicePort: port,
 	})
 
+	time.Sleep(1 * time.Second)
 
-	time.Sleep(60*time.Second)
-	for i := 0; i < 100; i++ {
-		test()
-	}
+	start := time.Now().UnixNano()
 
-	n := 0
-	for _, ip := range res {
-		if ip == "192.168.0.100:65432" {
-			n += 1
+	for i := 0; i < 2000; i++ {
+		token, err := getToken()
+		if err != nil {
+			fmt.Println("get token error:", err)
 		}
+
+		//fmt.Println("start test")
+		test(token)
 	}
-	fmt.Println("192.168.0.100:65432----", n)
+
+	fmt.Println(time.Now().UnixNano() - start)
+
+	//n := 0
+	//for _, ip := range res {
+	//	if ip == "192.168.0.100:65432" {
+	//		n += 1
+	//	}
+	//}
+	//fmt.Println("192.168.0.100:65432----", n)
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, os.Kill)
@@ -51,8 +62,8 @@ func main() {
 	fmt.Println(s)
 }
 
-func test() {
-	conn, err := grpc.Dial(":27890", grpc.WithInsecure())
+func test(token *imsPb.ImsToken) {
+	conn, err := grpc.Dial(":27890", grpc.WithInsecure(), grpc.WithPerRPCCredentials(&middleWare.AuthenticationInToken{Token: token}))
 	if err != nil {
 		fmt.Println("connect to server error:", err)
 		return
@@ -62,11 +73,31 @@ func test() {
 
 	c := imsPb.NewImsLoadBalanceClient(conn)
 
-	r, err1 := c.GetServiceWithRR(context.Background(), &imsPb.GetServiceRequest{ServiceGroup:"imsTest", ServiceName:"yinuo"})
+	r, err1 := c.GetServiceWithRR(context.Background(), &imsPb.GetServiceRequest{ServiceGroup: "imsTest", ServiceName: "yinuo"})
 	if err1 != nil {
+		fmt.Println("call grpc error:", err1)
+		return
+	}
+	res = append(res, r.ServiceHost+":"+r.ServicePort)
+}
+
+func getToken() (token *imsPb.ImsToken, err error) {
+	var conn *grpc.ClientConn
+	conn, err = grpc.Dial(":"+middleWare.TICKET_OFFICE_PORT, grpc.WithInsecure())
+	if err != nil {
+		fmt.Println("connect to server error:", err)
+		return
+	}
+
+	defer conn.Close()
+
+	c := imsPb.NewImsTicketOfficeClient(conn)
+
+	token, err = c.GetToken(context.Background(), &imsPb.GetTokenRequest{DomainName: "yinuo.com.cn", ServiceName: "yinuo"})
+	if err != nil {
 		fmt.Println("call grpc error:", err)
 		return
 	}
-	fmt.Println(r.ServiceHost, r.ServicePort)
-	res = append(res, r.ServiceHost + ":" + r.ServicePort)
+
+	return
 }

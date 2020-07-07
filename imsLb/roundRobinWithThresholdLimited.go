@@ -71,7 +71,7 @@ func (r *RoundRobinWithThresholdLimited) RoundRobinNext(service *ServiceWithThre
 		r.NextServiceMap[key] = 0
 	}
 
-	fmt.Println(r.NextServiceMap[key])
+	//fmt.Println(r.NextServiceMap[key])
 	return
 }
 

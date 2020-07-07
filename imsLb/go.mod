@@ -27,7 +27,8 @@ require (
 	go.uber.org/zap v1.15.0 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	google.golang.org/grpc v1.29.1
-	imsPb v0.0.0-00010101000000-000000000000
+	imsPb v0.0.0
+	middleWare v0.0.0
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
@@ -35,4 +36,5 @@ replace (
 	github.com/coreos/bbolt v1.3.4 => go.etcd.io/bbolt v1.3.4
 	google.golang.org/grpc => google.golang.org/grpc v1.26.0
 	imsPb => ../imsPb
+	middleWare => ../middleWare
 )
