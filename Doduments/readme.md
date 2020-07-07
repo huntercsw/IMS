@@ -10,7 +10,7 @@ IMS是一个简易的rpc框架，基于grpc实现。目前的主要功能包括�
 
 IMS秉承了去中心化的思想，主节点的作用是提供一个管理后台的web服务。主节点挂了也只是不能登录管理后台，不会影响正在运行的服务。
 
-![](./1594088269(1).png)
+![image text](https://github.com/huntercsw/IMS/blob/dev/Doduments/1594088269(1).png)
 
 节点启动后，会启动TicketOffice和ServiceCenter两个协程。
 
